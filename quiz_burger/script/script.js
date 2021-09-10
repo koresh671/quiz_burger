@@ -1,3 +1,4 @@
+// обработчик событий, который отслеживает загрузку контента
 document.addEventListener('DOMContentLoaded', function() {
     const btnOpenModal = document.querySelector('#btnOpenModal');
     const modalBlock = document.querySelector('#modalBlock');
@@ -6,8 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const formAnswers = document.querySelector('#formAnswers');
     const nextButton = document.querySelector('#next');
     const prevButton = document.querySelector('#prev');
+    const sendButton = document.querySelector('#send');
+
+    let myVar = 3;
 
 
+    // объект , содержащий вопросы и ответы
     const questions = [
         {
             question: "Какого цвета бургер?",
@@ -83,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
 
+    // обработчики событий открытия/закрытия модального окна
     btnOpenModal.addEventListener('click', function() {
         modalBlock.classList.add('d-block');
         playTest();
@@ -92,15 +98,21 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBlock.classList.remove('d-block');
     });
 
+    // функция запуска тестирования
     const playTest = () => {
+
+        const finalAnswers = [];
+
+        // переменная с номером вопроса
         let numberQuestion = 0;
 
+        // функция рендеринга ответов
         const renderAnswers = (index) => {
             questions[index].answers.forEach((answer) => {
                 const answerItem = document.createElement('div');
-                answerItem.classList.add('answers-item', 'd-flex', 'flex-column');
+                answerItem.classList.add('answers-item', 'd-flex', 'justify-content-center');
                 answerItem.innerHTML = `
-                    <input type="${questions[index].type}" id="${answer.title}" name="answer" class="d-none">
+                    <input type="${questions[index].type}" id="${answer.title}" name="answer" class="d-none" value='${answer.title}'>
                     <label for="${answer.title}" class="d-flex flex-column justify-content-between">
                     <img class="answerImg" src="${answer.url}" alt="burger">
                     <span>${answer.title}</span>
@@ -110,36 +122,80 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         };
 
+        // функция рендеринга вопросов - ответов
         const renderQuestions = (indexQuestion) => {
             formAnswers.innerHTML = '';
-
+            // переписать в switch case
+            if (numberQuestion >= 0 && numberQuestion <= questions.length - 1) {
+                questionTitle.textContent = `${questions[indexQuestion].question}`;
+                renderAnswers(indexQuestion);
+                nextButton.classList.remove('d-none');
+                prevButton.classList.remove('d-none');
+                sendButton.classList.add('d-none');
+            }
+            
             if (numberQuestion === 0) {
                 prevButton.classList.add('d-none');
-            } else {
-                prevButton.classList.remove('d-none');
             }
-                
-            if (numberQuestion === (questions.length - 1)) {
+
+            if (numberQuestion === questions.length) {
                 nextButton.classList.add('d-none');
-            } else {
-                nextButton.classList.remove('d-none');
+                prevButton.classList.add('d-none');
+                sendButton.classList.remove('d-none');
+
+                formAnswers.innerHTML = `
+                <div class='form-group'>
+                    <label for='numberPhone'>Enter your number</label>
+                    <input type='phone' class='form-control' id='numberPhone'>
+                </div>
+                `;
             }
 
-            questionTitle.textContent = `${questions[indexQuestion].question}`;
-
-            renderAnswers(indexQuestion);
+            if (numberQuestion === questions.length + 1) {
+                formAnswers.textContent = 'Спасибо за пройденный тест!';
+                setTimeout(() => {
+                    modalBlock.classList.remove('d-block');
+                }, 2000);
+            }
         };
+
+        // запуск функции рендеринга
         renderQuestions(numberQuestion);
 
+        const checkAnswers = () => {
+            const obj = {};
+            const inputs = [...formAnswers.elements].filter((input) => input.checked || input.id === 'numberPhone');
+
+            inputs.forEach((input, index) => {
+                if (numberQuestion >= 0 && numberQuestion <= questions.length - 1) {
+                    obj[`${index}_${questions[numberQuestion].question}`] = input.value;
+                }
+
+                if (numberQuestion === questions.length) {
+                    obj['Номер телефона'] = input.value;
+                }
+            });
+
+            finalAnswers.push(obj);
+        };
+
+        // обработчики событий кнопок next и prev
         nextButton.onclick = () => {
+            checkAnswers();
             numberQuestion++;
             renderQuestions(numberQuestion);
-
         };
 
         prevButton.onclick = () => {
             numberQuestion--;
             renderQuestions(numberQuestion);
+        };
+
+        sendButton.onclick = () => {
+            checkAnswers();
+            numberQuestion++;
+            renderQuestions(numberQuestion);
+            console.log(finalAnswers);
         };
     };
 
